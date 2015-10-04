@@ -27,44 +27,28 @@ public class PlayerAI extends ClientAI {
 	public Move getMove(Gameboard gameboard, Opponent opponent, Player player)
 			throws NoItemException, MapOutOfBoundsException {
 
-		dx = Math.abs(player.x - opponent.x);
-		dy = Math.abs(player.y - opponent.y);
-		if (dx > gameboard.getWidth() / safeDistanceratio
-				|| dy > gameboard.getHeight() / safeDistanceratio) {
-			dx_wrapped = gameboard.getWidth() - dx;
-			dy_wrapped = gameboard.getHeight() - dy;
-			if (dx_wrapped > gameboard.getWidth() / safeDistanceratio
-					&& dx > gameboard.getWidth() / safeDistanceratio) {
-				enemyIsClose = false;
-			} else if (dy_wrapped > gameboard.getHeight() / safeDistanceratio
-					&& dy > gameboard.getHeight() / safeDistanceratio) {
-				enemyIsClose = false;
-			} else {
-				enemyIsClose = true;
-			}
-		} else {
-			enemyIsClose = true;
-		}
-
-
 		// Write your AI here
-		GameWidth = gameboard.getWidth()-1;
-		GameHeight = gameboard.getHeight()-1;
+		GameWidth = gameboard.getWidth() - 1;
+		GameHeight = gameboard.getHeight() - 1;
 
 		BulletArrayList = gameboard.getBullets();
 		PowerUpArrayList = gameboard.getPowerUps();
 		WallsArrayList = gameboard.getWalls();
 
-		//for (int i = 0; i < BulletArrayList.size(); i++) {
-		//	System.out.println("B x :" + BulletArrayList.get(i).x + "B y: "
-		//			+ BulletArrayList.get(i).y);
-		//}
+		// for (int i = 0; i < BulletArrayList.size(); i++) {
+		// System.out.println("B x :" + BulletArrayList.get(i).x + "B y: "
+		// + BulletArrayList.get(i).y);
+		// }
 
-		//for (int i = 0; i < PowerUpArrayList.size(); i++) {
-		//	System.out.println("P x :" + PowerUpArrayList.get(i).x + "P y: "
-		//			+ PowerUpArrayList.get(i).y);
-		//}
-		
+		// for (int i = 0; i < PowerUpArrayList.size(); i++) {
+		// System.out.println("P x :" + PowerUpArrayList.get(i).x + "P y: "
+		// + PowerUpArrayList.get(i).y);
+		// }
+
+		if (isPlayerSafe(new Point(opponent.x, opponent.y), gameboard)) {
+
+		}
+
 		return Move.NONE;
 	}
 
@@ -79,7 +63,6 @@ public class PlayerAI extends ClientAI {
 			temp.y -= GameHeight;
 	}
 
-	
 	// Check if player is safe in a given point
 	boolean isPlayerSafe(Point currPoint, Gameboard gameboard) {
 		// to be checked for danger
@@ -90,36 +73,95 @@ public class PlayerAI extends ClientAI {
 				check.x = currPoint.x + r * dirx[i];
 				check.y = currPoint.y + r * diry[i];
 				wrapAroundPoint(check);
-				
+
 				try {
-					// if we find a wall we don't have to check anymore in that direction. player is safe
-					if (gameboard.isWallAtTile(check.x,check.y)){
-						//System.out.println("wall");
+					// if we find a wall we don't have to check anymore in that
+					// direction. player is safe
+					if (gameboard.isWallAtTile(check.x, check.y)) {
+						// System.out.println("wall");
 						break;
 					}
-					
+
 					// if we find a Turret, we have to check for some conditions
-					// Ex. Turret might be in its cool down time. That means the tile is safe
-					if (gameboard.isTurretAtTile(check.x,check.y)){
-						if( gameboard.getTurretAtTile(check.x,check.y).isFiringNextTurn() ){
+					// Ex. Turret might be in its cool down time. That means the
+					// tile is safe
+					if (gameboard.isTurretAtTile(check.x, check.y)) {
+						if (gameboard.getTurretAtTile(check.x, check.y)
+								.isFiringNextTurn()) {
 							return false;
-						}	
-						if( gameboard.getTurretAtTile(check.x,check.y).getFireTime() >= 1){
+						}
+						if (gameboard.getTurretAtTile(check.x, check.y)
+								.getFireTime() >= 1) {
 							return false;
 						}
 						return false;
 					}
-					
-					// Check for bullets
-					
-					
+
+					// check for bullets with are in range of r with currPoint
+					if (r <= 2) {
+						if (gameboard.areBulletsAtTile(check.x, check.y)) {
+							ArrayList<Bullet> bulletDir = gameboard
+									.getBulletsAtTile(check.x, check.y);
+							// System.out.println("Bullet found\n");
+
+							// Go thru all the bullets in that position and see
+							// if they are facing players direction
+							int b;
+							for (b = 0; b < bulletDir.size(); b++) {
+								Bullet bullet = bulletDir.get(b);
+								if (i == 0
+										&& bullet.getDirection() == Direction.RIGHT) {
+									System.out.println("will hit\n");
+									return false;
+								} else if (i == 1
+										&& bullet.getDirection() == Direction.UP) {
+									System.out.println("will hit\n");
+									return false;
+								} else if (i == 2
+										&& bullet.getDirection() == Direction.LEFT) {
+									System.out.println("will hit\n");
+									return false;
+								} else if (i == 3
+										&& bullet.getDirection() == Direction.DOWN) {
+									System.out.println("will hit\n");
+									return false;
+								}
+
+								else {
+									System.out.println("wont hit\n");
+								}
+							}
+						}
+					}
 				} catch (MapOutOfBoundsException | NoItemException e) {
 					e.printStackTrace();
 				}
-					
 			}
+
 		}
 		return true;
+	}
+
+	// Check if Enemy is close to the player
+	boolean isEnemyClose(Gameboard gameboard, Opponent opponent, Player player) {
+		dx = Math.abs(player.x - opponent.x);
+		dy = Math.abs(player.y - opponent.y);
+		if (dx > gameboard.getWidth() / safeDistanceratio
+				|| dy > gameboard.getHeight() / safeDistanceratio) {
+			dx_wrapped = gameboard.getWidth() - dx;
+			dy_wrapped = gameboard.getHeight() - dy;
+			if (dx_wrapped > gameboard.getWidth() / safeDistanceratio
+					&& dx > gameboard.getWidth() / safeDistanceratio) {
+				return false;
+			} else if (dy_wrapped > gameboard.getHeight() / safeDistanceratio
+					&& dy > gameboard.getHeight() / safeDistanceratio) {
+				return false;
+			} else {
+				return true;
+			}
+		} else {
+			return true;
+		}
 	}
 
 }
