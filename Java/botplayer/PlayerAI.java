@@ -4,6 +4,7 @@ import java.awt.Point;
 import com.orbischallenge.engine.gameboard.GameObject;
 
 public class PlayerAI extends ClientAI {
+
 	int safeDistanceratio = 3;
 	boolean enemyIsClose = false;
 
@@ -14,13 +15,28 @@ public class PlayerAI extends ClientAI {
 	ArrayList<Bullet> BulletArrayList;
 	ArrayList<PowerUp> PowerUpArrayList;
 	ArrayList<Wall> WallsArrayList;
+
 	int GameWidth, GameHeight;
+
+	Point PlayerCurPos = null;
+	Point PlayerNxtPos = null;
+
+	Direction curDir;
+	Random rnd;
+
+	ArrayList<Move> playerMoves;
+
+	boolean gaveForward = true;
 
 	public PlayerAI() {
 		// Write your initialization here
 		BulletArrayList = new ArrayList<Bullet>();
 		PowerUpArrayList = new ArrayList<PowerUp>();
 		WallsArrayList = new ArrayList<Wall>();
+		playerMoves = new ArrayList<Move>();
+		PlayerCurPos = new Point();
+		PlayerNxtPos = new Point();
+		rnd = new Random(3);
 	}
 
 	@Override
@@ -35,17 +51,63 @@ public class PlayerAI extends ClientAI {
 		PowerUpArrayList = gameboard.getPowerUps();
 		WallsArrayList = gameboard.getWalls();
 
-		// for (int i = 0; i < BulletArrayList.size(); i++) {
-		// System.out.println("B x :" + BulletArrayList.get(i).x + "B y: "
-		// + BulletArrayList.get(i).y);
-		// }
+		curDir = player.getDirection();
+		System.out.println("player direction " + player.getDirection());
 
-		// for (int i = 0; i < PowerUpArrayList.size(); i++) {
-		// System.out.println("P x :" + PowerUpArrayList.get(i).x + "P y: "
-		// + PowerUpArrayList.get(i).y);
-		// }
+		dx = Math.abs(player.x - opponent.x);
+		dy = Math.abs(player.y - opponent.y);
+		if (dx > gameboard.getWidth() / safeDistanceratio
+				|| dy > gameboard.getHeight() / safeDistanceratio) {
+			dx_wrapped = gameboard.getWidth() - dx;
+			dy_wrapped = gameboard.getHeight() - dy;
+			if (dx_wrapped > gameboard.getWidth() / safeDistanceratio
+					&& dx > gameboard.getWidth() / safeDistanceratio) {
+				enemyIsClose = false;
+			} else if (dy_wrapped > gameboard.getHeight() / safeDistanceratio
+					&& dy > gameboard.getHeight() / safeDistanceratio) {
+				enemyIsClose = false;
+			} else {
+				enemyIsClose = true;
+			}
+		} else {
+			enemyIsClose = true;
+		}
+		if (enemyIsClose) {
+			System.out.println("ENEMY IS CLOSE!!!!\n");
+			// write the close combat logic here
+		}
 
-		return Move.NONE;
+		// greedy walking logic
+		PlayerCurPos.x = player.x;
+		PlayerCurPos.y = player.y;
+
+		// iff last move was a turn, try to go forward in that direction
+		if (!gaveForward) {
+			if (isPlayerSafe(PlayerNxtPos, gameboard)) {
+				// gaveForward = true;
+				// return Move.FORWARD;
+				return MoveToNewPosition();
+			}
+		}
+
+		// randomly pick a direction until we get a safe position to move
+		// we are currently in the previously calculated next position
+		// so calculate a new next position to move
+		int index;
+		do {
+			index = rnd.nextInt(4);
+			System.out.println("rand: " + index);
+			int x = PlayerCurPos.x + dirx[index];
+			int y = PlayerCurPos.y + diry[index];
+			PlayerNxtPos.setLocation(x, y);
+			wrapAroundPoint(PlayerNxtPos);
+		} while (isPlayerSafe(PlayerNxtPos, gameboard));
+
+		System.out.println("player next pos: " + PlayerNxtPos);
+
+		// make the move to new position from current position
+		return MoveToNewPosition();
+
 	}
 
 	private void wrapAroundPoint(Point temp) {
@@ -59,10 +121,51 @@ public class PlayerAI extends ClientAI {
 			temp.y -= GameHeight;
 	}
 
+	private Move MoveToNewPosition() {
+		if ((PlayerCurPos.x + 1 == PlayerNxtPos.x)
+				&& (curDir != Direction.RIGHT)) {
+			gaveForward = false;
+			return Move.FACE_RIGHT;
+
+		} else if ((PlayerCurPos.y + 1 == PlayerNxtPos.y)
+				&& (curDir != Direction.DOWN)) {
+			gaveForward = false;
+			return Move.FACE_DOWN;
+
+		} else if ((PlayerCurPos.x - 1 == PlayerNxtPos.x)
+				&& (curDir != Direction.LEFT)) {
+			gaveForward = false;
+			return Move.FACE_LEFT;
+
+		} else if ((PlayerCurPos.y - 1 == PlayerNxtPos.y)
+				&& (curDir != Direction.UP)) {
+			gaveForward = false;
+			return Move.FACE_UP;
+
+		} else {
+			gaveForward = true;
+			return Move.FORWARD;
+		}
+	}
+
 	// Check if player is safe in a given point
+
 	boolean isPlayerSafe(Point currPoint, Gameboard gameboard) {
+		System.out.println("Checking is player is safe\n");
 		// to be checked for danger
 		Point check = new Point();
+
+		// Check what's in the current point
+		try {
+			if (gameboard.isWallAtTile(currPoint.x, currPoint.y)
+					|| gameboard.isTurretAtTile(currPoint.x, currPoint.y)) {
+				return false;
+			}
+		} catch (MapOutOfBoundsException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
 		// Check if there are turrets within the current point
 		for (int i = 0; i < 4; i++) {
 			for (int r = 0; r < 5; r++) {
@@ -75,7 +178,7 @@ public class PlayerAI extends ClientAI {
 					// direction. player is safe
 					if (gameboard.isWallAtTile(check.x, check.y)) {
 						// System.out.println("wall");
-						break;
+						return false;
 					}
 
 					// if we find a Turret, we have to check for some conditions
