@@ -45,10 +45,6 @@ public class PlayerAI extends ClientAI {
 		// + PowerUpArrayList.get(i).y);
 		// }
 
-		if (isPlayerSafe(new Point(opponent.x, opponent.y), gameboard)) {
-
-		}
-
 		return Move.NONE;
 	}
 
