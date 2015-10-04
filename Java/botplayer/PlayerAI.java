@@ -16,7 +16,7 @@ public class PlayerAI extends ClientAI {
 	ArrayList<PowerUp> PowerUpArrayList;
 	ArrayList<Wall> WallsArrayList;
 
-	int GameWidth, GameHeight; // both will be set to 15 in  Map1.json
+	int GameWidth, GameHeight; // both will be set to 15 in Map1.json
 
 	Point PlayerCurPos = null;
 	Point PlayerNxtPos = null;
@@ -46,8 +46,8 @@ public class PlayerAI extends ClientAI {
 		// Write your AI here
 		GameWidth = gameboard.getWidth();
 		GameHeight = gameboard.getHeight();
-		
-		System.out.println("game width and height " + GameWidth + GameHeight);
+
+		System.out.println("game width and height " + GameWidth +GameHeight);
 
 		BulletArrayList = gameboard.getBullets();
 		PowerUpArrayList = gameboard.getPowerUps();
@@ -63,8 +63,8 @@ public class PlayerAI extends ClientAI {
 		// iff last move was a turn, try to go forward in that direction
 		if (!gaveForward) {
 			if (isPlayerSafe(PlayerNxtPos, gameboard)) {
-				 //gaveForward = true;
-				 //return Move.FORWARD;
+				// gaveForward = true;
+				// return Move.FORWARD;
 				System.out.println("went forward in 2");
 				return MoveToNewPosition();
 			}
@@ -77,7 +77,7 @@ public class PlayerAI extends ClientAI {
 		System.out.println("cur pos: " + PlayerCurPos);
 		do {
 			index = rnd.nextInt(4);
-			System.out.println("rand: " + index);
+			// System.out.println("rand: " + index);
 			int x = PlayerCurPos.x + dirx[index];
 			int y = PlayerCurPos.y + diry[index];
 			PlayerNxtPos.setLocation(x, y);
@@ -98,9 +98,9 @@ public class PlayerAI extends ClientAI {
 			temp.x += GameWidth;
 		if (temp.y < 0)
 			temp.y += GameHeight;
-		if (temp.x > GameWidth)
+		if (temp.x >= GameWidth)
 			temp.x -= GameWidth;
-		if (temp.y > GameHeight)
+		if (temp.y >= GameHeight)
 			temp.y -= GameHeight;
 	}
 
@@ -119,7 +119,7 @@ public class PlayerAI extends ClientAI {
 				&& (curDir != Direction.LEFT)) {
 			gaveForward = false;
 			return Move.FACE_LEFT;
-			
+
 		} else if ((PlayerCurPos.y - 1 == PlayerNxtPos.y)
 				&& (curDir != Direction.UP)) {
 			gaveForward = false;
@@ -132,30 +132,21 @@ public class PlayerAI extends ClientAI {
 	}
 
 	// Check if player is safe in a given point
-
 	boolean isPlayerSafe(Point currPoint, Gameboard gameboard) {
 		// to be checked for danger
 		Point check = new Point();
 
-		// Check what's in the current point
 		try {
 			if (gameboard.isWallAtTile(currPoint.x, currPoint.y)
 					|| gameboard.isTurretAtTile(currPoint.x, currPoint.y)) {
-				System.out.println(" ** wall here ! **");
+				//System.out.println(" ** wall here ! **");
 				return false;
 			}
-			else{
-				return true;
-			}
-				
 		} catch (MapOutOfBoundsException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		return true; 
-	}
 
-		/*
 		// Check if there are turrets within the current point
 		for (int i = 0; i < 4; i++) {
 			for (int r = 0; r < 5; r++) {
@@ -168,23 +159,23 @@ public class PlayerAI extends ClientAI {
 					// direction. player is safe
 					if (gameboard.isWallAtTile(check.x, check.y)) {
 						// System.out.println("wall");
-						return false;
+						break;
 					}
 
 					// if we find a Turret, we have to check for some conditions
 					// Ex. Turret might be in its cool down time. That means the
 					// tile is safe
 					if (gameboard.isTurretAtTile(check.x, check.y)) {
-						if (gameboard.getTurretAtTile(check.x, check.y)
-								.isFiringNextTurn()) {
-							return false;
-						}
-						
-						if (gameboard.getTurretAtTile(check.x, check.y)
-								.getFireTime() >= 1) {
-							return false;
-						}
-						return true;
+						//if (gameboard.getTurretAtTile(check.x, check.y)
+						//.isFiringNextTurn()) {
+						//return false;
+						//}
+
+						// if (gameboard.getTurretAtTile(check.x, check.y)
+						// .getFireTime() >= 1) {
+						// return false;
+						// }
+						return false;
 					}
 
 					// check for bullets with are in range of r with currPoint
@@ -224,14 +215,14 @@ public class PlayerAI extends ClientAI {
 							}
 						}
 					}
-				} catch (MapOutOfBoundsException | NoItemException e) {
+				} catch (MapOutOfBoundsException e) {
 					e.printStackTrace();
 				}
 			}
 
 		}
 		return true;
-	}*/
+	}
 
 	// Check if Enemy is close to the player
 	boolean isEnemyClose(Gameboard gameboard, Opponent opponent, Player player) {
