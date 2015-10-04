@@ -18,6 +18,7 @@ public class PlayerAI extends ClientAI {
 
 	int GameWidth, GameHeight; // both will be set to 15 in Map1.json
 
+	Point PlayerPrevPos = null;
 	Point PlayerCurPos = null;
 	Point PlayerNxtPos = null;
 
@@ -27,6 +28,7 @@ public class PlayerAI extends ClientAI {
 	ArrayList<Move> playerMoves;
 
 	boolean gaveForward = true;
+	boolean firstcall = true;
 
 	public PlayerAI() {
 		// Write your initialization here
@@ -36,6 +38,7 @@ public class PlayerAI extends ClientAI {
 		playerMoves = new ArrayList<Move>();
 		PlayerCurPos = new Point();
 		PlayerNxtPos = new Point();
+		PlayerPrevPos = new Point();
 		rnd = new Random(4);
 	}
 
@@ -47,7 +50,7 @@ public class PlayerAI extends ClientAI {
 		GameWidth = gameboard.getWidth();
 		GameHeight = gameboard.getHeight();
 
-		System.out.println("game width and height " + GameWidth +GameHeight);
+		System.out.println("game width and height " + GameWidth + GameHeight);
 
 		BulletArrayList = gameboard.getBullets();
 		PowerUpArrayList = gameboard.getPowerUps();
@@ -60,12 +63,14 @@ public class PlayerAI extends ClientAI {
 		PlayerCurPos.x = player.x;
 		PlayerCurPos.y = player.y;
 
-		// iff last move was a turn, try to go forward in that direction
+		System.out.println("cur pos: " + PlayerCurPos);
+
+		// if last move was a turn, try to go forward in that direction
 		if (!gaveForward) {
 			if (isPlayerSafe(PlayerNxtPos, gameboard)) {
-				// gaveForward = true;
-				// return Move.FORWARD;
 				System.out.println("went forward in 2");
+
+				System.out.println("did prev pos change?: " + PlayerPrevPos);
 				return MoveToNewPosition();
 			}
 		}
@@ -74,12 +79,23 @@ public class PlayerAI extends ClientAI {
 		// we are currently in the previously calculated next position
 		// so calculate a new next position to move
 		int index;
-		System.out.println("cur pos: " + PlayerCurPos);
+
+		// try to find the Next position to go straight in same direction
+		if (!firstcall) {
+			tryToGoStraight();
+			System.out.println("player prev pos: " + PlayerPrevPos);
+			if (isPlayerSafe(PlayerNxtPos, gameboard)) {
+				System.out.println("go straight pos: " + PlayerNxtPos);
+				return MoveToNewPosition();
+			}
+		}
+
 		do {
 			index = rnd.nextInt(4);
 			// System.out.println("rand: " + index);
 			int x = PlayerCurPos.x + dirx[index];
 			int y = PlayerCurPos.y + diry[index];
+			System.out.println("x and y :" + x + " " + y);
 			PlayerNxtPos.setLocation(x, y);
 			System.out.println("rand next pos: " + PlayerNxtPos);
 			wrapAroundPoint(PlayerNxtPos);
@@ -87,7 +103,7 @@ public class PlayerAI extends ClientAI {
 		} while (!isPlayerSafe(PlayerNxtPos, gameboard));
 
 		System.out.println("safe next pos: " + PlayerNxtPos);
-
+		firstcall = false;
 		// make the move to new position from current position
 		return MoveToNewPosition();
 
@@ -126,8 +142,54 @@ public class PlayerAI extends ClientAI {
 			return Move.FACE_UP;
 		} else {
 			gaveForward = true;
+			// save the Prev position because we want to continue in same
+			// direction
+			PlayerPrevPos.setLocation(PlayerCurPos.x, PlayerCurPos.y);
 			System.out.println("went forward in 2");
+			System.out.println("saved prev pos: " + PlayerPrevPos);
 			return Move.FORWARD;
+		}
+	}
+
+	private void tryToGoStraight() {
+		Point tempPrev = new Point();
+		tempPrev.setLocation(PlayerPrevPos.x, PlayerPrevPos.y);
+
+		PlayerNxtPos.setLocation(PlayerCurPos.x, PlayerCurPos.y);
+
+		tempPrev.x++;
+		System.out.println("did prev pos change? 1: " + PlayerPrevPos);
+		wrapAroundPoint(tempPrev);
+		if (PlayerCurPos.x == tempPrev.x) {
+			PlayerNxtPos.x += 1;
+			wrapAroundPoint(PlayerNxtPos);
+		}
+
+		tempPrev.setLocation(PlayerPrevPos.x, PlayerPrevPos.y);
+		tempPrev.y++;
+		System.out.println("did prev pos change? 2: " + PlayerPrevPos);
+		wrapAroundPoint(tempPrev);
+		if (PlayerCurPos.y == tempPrev.y) {
+			PlayerNxtPos.y += 1;
+			wrapAroundPoint(PlayerNxtPos);
+		}
+
+		tempPrev.setLocation(PlayerPrevPos.x, PlayerPrevPos.y);
+		tempPrev.x--;
+		System.out.println("did prev pos change? 3: " + PlayerPrevPos);
+		wrapAroundPoint(tempPrev);
+		if (PlayerCurPos.x == tempPrev.x) {
+			PlayerNxtPos.x -= 1;
+			wrapAroundPoint(PlayerNxtPos);
+		}
+
+		tempPrev.setLocation(PlayerPrevPos.x, PlayerPrevPos.y);
+		tempPrev.y--;
+		System.out.println("did prev pos change? 4: " + PlayerPrevPos);
+		wrapAroundPoint(tempPrev);
+		if (PlayerCurPos.y == tempPrev.y) {
+			PlayerNxtPos.y -= 1;
+			wrapAroundPoint(PlayerNxtPos);
 		}
 	}
 
@@ -139,7 +201,7 @@ public class PlayerAI extends ClientAI {
 		try {
 			if (gameboard.isWallAtTile(currPoint.x, currPoint.y)
 					|| gameboard.isTurretAtTile(currPoint.x, currPoint.y)) {
-				//System.out.println(" ** wall here ! **");
+				System.out.println(" ** wall here ! **");
 				return false;
 			}
 		} catch (MapOutOfBoundsException e1) {
@@ -166,10 +228,6 @@ public class PlayerAI extends ClientAI {
 					// Ex. Turret might be in its cool down time. That means the
 					// tile is safe
 					if (gameboard.isTurretAtTile(check.x, check.y)) {
-						//if (gameboard.getTurretAtTile(check.x, check.y)
-						//.isFiringNextTurn()) {
-						//return false;
-						//}
 
 						// if (gameboard.getTurretAtTile(check.x, check.y)
 						// .getFireTime() >= 1) {
